@@ -17,7 +17,7 @@ from AdvancedSecurityManager import AdvancedSecurityManager, ThreatLevel
 from PerformanceOptimizer import PerformanceOptimizer, IntelligentDeviceSelector
 from ComprehensiveMonitor import ComprehensiveMonitor
 from EnhancedMedicalIoMTDevice import EnhancedMedicalIoMTDevice
-from NeuralNetworkModal import SimpleNeuralNetwork
+from NeuralNetworkModal import MedicalNeuralNetwork
 
 @dataclass 
 class FederatedRoundConfig:
@@ -39,8 +39,8 @@ class EnhancedFederatedServer:
                  privacy_epsilon: float = 1.0, privacy_delta: float = 1e-5,
                  log_dir: str = "enhanced_fl_logs"):
         
-        # Core model
-        self.global_model = SimpleNeuralNetwork(input_size, learning_rate=0.01)
+        # Core model - Using medical-optimized neural network
+        self.global_model = MedicalNeuralNetwork(input_size, learning_rate=0.001)
         
         # Enhanced components
         self.privacy_preserver = EnhancedPrivacyPreserver(privacy_epsilon, privacy_delta)
