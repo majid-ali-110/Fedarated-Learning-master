@@ -15,7 +15,69 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from NeuralNetworkModal import SimpleNeuralNetwork
 from IoMTDevice import IoMTDevice
 from cryptography.fernet import Fernet
-from PrivacyPreserver import PrivacyPreserver
+import base64
+import pickle
+
+# Basic Privacy Preserver fallback class
+class BasicPrivacyPreserver:
+    """Basic privacy preservation utilities as fallback"""
+    
+    @staticmethod
+    def add_differential_privacy_noise(weights: List[np.ndarray], epsilon: float = 0.1, 
+                                     sensitivity: float = 1.0) -> List[np.ndarray]:
+        """Add Laplacian noise for differential privacy"""
+        scale = sensitivity / epsilon
+        noisy_weights = []
+        
+        for weight_matrix in weights:
+            noise = np.random.laplace(0, scale, weight_matrix.shape)
+            noisy_weights.append(weight_matrix + noise)
+        
+        return noisy_weights
+    
+    @staticmethod
+    def encrypt_weights(weights: List[np.ndarray], key: bytes) -> Tuple[str, List[Tuple]]:
+        """Encrypt model weights for secure transmission - returns base64 encoded string"""
+        fernet = Fernet(key)
+        encrypted_weights = []
+        weight_shapes = []
+        
+        for weight_matrix in weights:
+            # Store shape for reconstruction
+            weight_shapes.append(weight_matrix.shape)
+            # Flatten and serialize
+            weight_bytes = weight_matrix.flatten().tobytes()
+            # Encrypt
+            encrypted_weight = fernet.encrypt(weight_bytes)
+            encrypted_weights.append(encrypted_weight)
+        
+        # Serialize to base64 string for compatibility
+        encrypted_data = pickle.dumps(encrypted_weights)
+        encoded_weights = base64.b64encode(encrypted_data).decode('utf-8')
+        
+        return encoded_weights, weight_shapes
+    
+    @staticmethod
+    def decrypt_weights(encrypted_weights_str: str, key: bytes, shapes: List[Tuple]) -> List[np.ndarray]:
+        """Decrypt model weights from base64 encoded string"""
+        fernet = Fernet(key)
+        decrypted_weights = []
+        
+        # Decode from base64 string
+        encrypted_data = base64.b64decode(encrypted_weights_str.encode('utf-8'))
+        encrypted_weights = pickle.loads(encrypted_data)
+        
+        for encrypted_weight, shape in zip(encrypted_weights, shapes):
+            # Decrypt
+            weight_bytes = fernet.decrypt(encrypted_weight)
+            # Reconstruct array
+            weight_array = np.frombuffer(weight_bytes, dtype=np.float32).reshape(shape)
+            decrypted_weights.append(weight_array)
+        
+        return decrypted_weights
+
+# Set default privacy preserver
+PrivacyPreserver = BasicPrivacyPreserver
 
 # Import enhanced components if available
 try:

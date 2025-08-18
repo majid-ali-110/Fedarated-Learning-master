@@ -14,15 +14,16 @@ except ImportError:
 
 
 def load_and_prepare_medical_data():
-    """Load and prepare real medical dataset (Breast Cancer Wisconsin)"""
-    print("Loading real medical dataset (Breast Cancer Wisconsin)...")
+    """Load and prepare real medical dataset (Breast Cancer Wisconsin) with enhanced preprocessing"""
+    print("Loading and enhancing real medical dataset (Breast Cancer Wisconsin)...")
     
     if not SKLEARN_AVAILABLE:
         raise ImportError("sklearn is required to load real medical datasets. Please install scikit-learn.")
     
     # Import locally to avoid type checking issues
     from sklearn.datasets import load_breast_cancer  # type: ignore
-    from sklearn.preprocessing import StandardScaler  # type: ignore
+    from sklearn.preprocessing import StandardScaler, RobustScaler  # type: ignore
+    from sklearn.model_selection import train_test_split  # type: ignore
     
     # Load the real breast cancer dataset
     data = load_breast_cancer()
@@ -31,16 +32,40 @@ def load_and_prepare_medical_data():
 
     print(f"Real dataset loaded: {X.shape[0]} samples, {X.shape[1]} features")
     print(f"Classes: {data.target_names}")  # type: ignore
-    print(f"Features: First 5 features - {data.feature_names[:5]}")  # type: ignore
+    print(f"Class distribution: {np.bincount(y)}")
     
-    # Normalize features using StandardScaler
-    scaler = StandardScaler()  # type: ignore
+    # Enhanced preprocessing pipeline
+    # 1. Use RobustScaler for better outlier handling in medical data
+    scaler = RobustScaler()  # type: ignore
     X_scaled = scaler.fit_transform(X)
     
-    # Reshape y for neural network
-    y_reshaped = y.reshape(-1, 1)
+    # 2. Add feature engineering - polynomial features for critical medical indicators
+    # Focus on the most important features (first 10 are mean values)
+    X_enhanced = X_scaled.copy()
     
-    return X_scaled, y_reshaped
+    # Add some interaction features for better medical pattern recognition
+    # Mean radius * mean texture (tumor characteristics interaction)
+    radius_texture = X_scaled[:, 0:1] * X_scaled[:, 1:2]  
+    # Mean perimeter * mean area (size consistency)
+    perimeter_area = X_scaled[:, 2:3] * X_scaled[:, 3:4]
+    
+    # Concatenate enhanced features
+    X_final = np.concatenate([X_enhanced, radius_texture, perimeter_area], axis=1)
+    
+    print(f"Enhanced features: {X_final.shape[1]} total features (original: {X.shape[1]})")
+    
+    # 3. Ensure balanced representation by stratified shuffling
+    X_shuffled, _, y_shuffled, _ = train_test_split(X_final, y, test_size=0.01, 
+                                                    stratify=y, random_state=42)
+    
+    # Reshape y for neural network compatibility
+    y_reshaped = y_shuffled.reshape(-1, 1).astype(np.float32)
+    X_final_float = X_shuffled.astype(np.float32)
+    
+    print(f"Final preprocessed data: {X_final_float.shape}, labels: {y_reshaped.shape}")
+    print(f"Data type: {X_final_float.dtype}, Labels type: {y_reshaped.dtype}")
+    
+    return X_final_float, y_reshaped
 
 
 def split_data_among_devices(X, y, device_names, split_ratios=None):
@@ -83,31 +108,8 @@ def split_data_among_devices(X, y, device_names, split_ratios=None):
     return device_data
 
 
-def generate_medical_data(num_samples: int = 300, input_size: int = 50) -> Tuple[np.ndarray, np.ndarray]:
-    """Generate synthetic medical data for federated learning"""
-    np.random.seed(42)  # For reproducibility
-    
-    # Generate synthetic medical features
-    X = np.random.randn(num_samples, input_size).astype(np.float32)
-    
-    # Create realistic medical data patterns
-    # Simulate vital signs, lab results, and measurements
-    for i in range(num_samples):
-        if i % 2 == 0:  # Healthy pattern
-            X[i, :input_size//2] = np.random.normal(0, 0.5, input_size//2)  # Normal vitals
-            X[i, input_size//2:] = np.random.normal(0, 0.3, input_size//2)  # Normal labs
-        else:  # At-risk pattern
-            X[i, :input_size//2] = np.random.normal(1.2, 0.8, input_size//2)  # Elevated vitals
-            X[i, input_size//2:] = np.random.normal(1.0, 0.6, input_size//2)  # Abnormal labs
-    
-    # Binary classification labels
-    y = np.array([i % 2 for i in range(num_samples)], dtype=np.int32)
-    
-    return X, y
-
-
-def create_synthetic_devices(num_devices: int = 5) -> List[str]:
-    """Create synthetic device names for medical IoMT network"""
+def create_medical_device_names(num_devices: int = 5) -> List[str]:
+    """Create realistic medical device names for IoMT network"""
     device_names = [
         "MetroGeneral_Hospital",
         "CityHealth_Clinic", 
