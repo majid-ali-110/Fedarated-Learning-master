@@ -4,19 +4,17 @@ Implements Byzantine fault tolerance, secure aggregation, and advanced threat de
 """
 
 import numpy as np
-import hashlib
-import hmac
 import secrets
 import base64
-from typing import List, Dict, Tuple, Optional, Set
+from typing import List, Dict, Tuple,Set
 from dataclasses import dataclass
 from enum import Enum
 import logging
 from datetime import datetime
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-import json
+
 
 class ThreatLevel(Enum):
     LOW = "low"

@@ -1,14 +1,14 @@
 # Real medical data utilities using sklearn
 import numpy as np
-from typing import Tuple, List, Any
+from typing import List
 
 # Try to import sklearn components
 SKLEARN_AVAILABLE = False
 
 try:
     from sklearn.datasets import load_breast_cancer
-    from sklearn.preprocessing import StandardScaler
     SKLEARN_AVAILABLE = True
+    del load_breast_cancer  # Clean up, we'll import locally where needed
 except ImportError:
     print("Warning: sklearn not available. Install with: pip install scikit-learn")
 
@@ -22,7 +22,7 @@ def load_and_prepare_medical_data():
     
     # Import locally to avoid type checking issues
     from sklearn.datasets import load_breast_cancer  # type: ignore
-    from sklearn.preprocessing import StandardScaler, RobustScaler  # type: ignore
+    from sklearn.preprocessing import RobustScaler  # type: ignore
     from sklearn.model_selection import train_test_split  # type: ignore
     
     # Load the real breast cancer dataset
@@ -66,46 +66,6 @@ def load_and_prepare_medical_data():
     print(f"Data type: {X_final_float.dtype}, Labels type: {y_reshaped.dtype}")
     
     return X_final_float, y_reshaped
-
-
-def split_data_among_devices(X, y, device_names, split_ratios=None):
-    """
-    Args:
-        X: Feature data
-        y: Target data
-        device_names: List of device names
-        split_ratios: List of ratios for data distribution (optional)
-    
-    Returns:
-        List of tuples (X_device, y_device) for each device
-    """
-    if split_ratios is None:
-        split_ratios = [0.4, 0.3, 0.2, 0.1]  # Default ratios
-    
-    print("\nDistributing data among IoMT devices...")
-    
-    # Ensure split_ratios match device_names length
-    if len(split_ratios) != len(device_names):
-        # Distribute equally if ratios don't match
-        split_ratios = [1.0 / len(device_names)] * len(device_names)
-    
-    total_samples = len(X)
-    start_idx = 0
-    device_data = []
-    
-    for i, (device_name, ratio) in enumerate(zip(device_names, split_ratios)):
-        end_idx = start_idx + int(total_samples * ratio)
-        # print(f"end index is {end_idx}")
-        
-        if i == len(device_names) - 1:  # Last device gets remaining data
-            end_idx = total_samples
-            
-        X_device = X[start_idx:end_idx]
-        y_device = y[start_idx:end_idx]
-        
-        device_data.append((X_device, y_device))
-        start_idx = end_idx
-    return device_data
 
 
 def create_medical_device_names(num_devices: int = 5) -> List[str]:

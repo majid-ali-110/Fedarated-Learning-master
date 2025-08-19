@@ -5,11 +5,9 @@ Implements state-of-the-art privacy techniques including Rényi DP, adaptive cli
 
 import numpy as np
 import math
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict
 from dataclasses import dataclass
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 import logging
 from datetime import datetime

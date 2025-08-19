@@ -7,7 +7,6 @@ from tensorflow.keras.models import Sequential  # type: ignore
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization  # type: ignore
 from tensorflow.keras.optimizers import Adam  # type: ignore
 from tensorflow.keras.regularizers import l2  # type: ignore
-import tensorflow as tf
 
 
 def MedicalNeuralNetwork(input_size, learning_rate=0.001):
